@@ -18,7 +18,8 @@
 
 extern u32 _start, __end__;
 
-/*void sha256hw_calchash(u32 *outhash, u32 *buf, u32 buf_wordsize)
+#ifndef DISABLE_BINVERIFY
+void sha256hw_calchash_codebin(u32 *outhash, u32 *buf, u32 buf_wordsize, u32 loadaddr, u32 footertype)
 {
 	u32 pos;
 	vu32 *SHA_CNT = (vu32*)0x1000a000;
@@ -27,6 +28,9 @@ extern u32 _start, __end__;
 
 	*SHA_CNT = 0x9;
 
+	while((*SHA_CNT) & 0x1);
+	*SHA_INFIFO = loadaddr;
+
 	pos = 0;
 	do {
 		while((*SHA_CNT) & 0x1);
@@ -34,12 +38,16 @@ extern u32 _start, __end__;
 		pos++;
 	} while(pos<buf_wordsize);
 
+	while((*SHA_CNT) & 0x1);
+	*SHA_INFIFO = footertype;
+
 	*SHA_CNT = 0xa;
 	while((*SHA_CNT) & 0x2);
 	while((*SHA_CNT) & 0x1);
 
 	for(pos=0; pos<(0x20>>2); pos++)outhash[pos] = SHA_HASH[pos];
-}*/
+}
+#endif
 
 s32 verify_binarymemrange(u32 loadaddr, u32 binsize)
 {
@@ -97,7 +105,21 @@ s32 load_binary(char *path, s32 *errortable, u32 **loadaddrptr)
 	UINT totalread=0;
 	DWORD filesize=0;
 
+	u32 minfilesize = 8;
+	u32 extra_binsize = 4;
+	u32 binsize = 0;
+	u32 *bufptr;
+
+	u32 pos;
 	s32 ret;
+
+	#ifndef DISABLE_BINVERIFY
+	u32 calchash[0x20>>2];
+	u32 footerdata[0x24>>2];
+
+	minfilesize+= 0x24;
+	extra_binsize+= 0x24;
+	#endif
 
 	res = f_open(&fil, path, FA_READ);
 	errortable[0] = res;
@@ -105,13 +127,15 @@ s32 load_binary(char *path, s32 *errortable, u32 **loadaddrptr)
 
 	filesize = f_size(&fil);
 	ret = 0;
-	if((filesize < 8) || (filesize>>31))ret = 0x40;
+	if((filesize < minfilesize) || (filesize>>31) || (filesize & 0x3))ret = 0x40;
 	errortable[1] = ret;
 	if(ret)
 	{
 		f_close(&fil);
 		return ret;
 	}
+
+	binsize = ((u32)filesize) - extra_binsize;
 
 	totalread=0;
 	res = f_read(&fil, loadaddrptr, 4, &totalread);
@@ -131,7 +155,7 @@ s32 load_binary(char *path, s32 *errortable, u32 **loadaddrptr)
 		return ret;
 	}
 
-	ret = verify_binarymemrange((u32)*loadaddrptr, (u32)(filesize-4));
+	ret = verify_binarymemrange((u32)*loadaddrptr, binsize);
 	errortable[4] = ret;
 	if(ret)
 	{
@@ -141,23 +165,68 @@ s32 load_binary(char *path, s32 *errortable, u32 **loadaddrptr)
 
 	errortable[5] = 0;
 	totalread=0;
-	res = f_read(&fil, (u32*)*loadaddrptr, filesize-4, &totalread);
-	f_close(&fil);
+	res = f_read(&fil, (u32*)*loadaddrptr, binsize, &totalread);
+
+	ret = 0;
 
 	if(res!=FR_OK)
 	{
 		errortable[5] = res;
-		return res;
+		ret = res;
 	}
-
-	if(totalread != (filesize-4))
+	else if(totalread != binsize)
 	{
 		ret = 0x41;
 		errortable[5] = ret;
-		return ret;
 	}
 
-	return 0;
+	#ifndef DISABLE_BINVERIFY
+	if(ret==0)
+	{
+		errortable[6] = 0;
+		totalread=0;
+		res = f_read(&fil, footerdata, sizeof(footerdata), &totalread);
+
+		if(res!=FR_OK)
+		{
+			errortable[6] = res;
+			ret = res;
+		}
+		else if(totalread != sizeof(footerdata))
+		{
+			ret = 0x41;
+			errortable[6] = ret;
+		}
+
+		if(ret==0)
+		{
+			if(footerdata[0] != 0x1f40924e)ret = 0x42;//Validate the footertype.
+			errortable[7] = ret;
+
+			if(ret==0)
+			{
+				sha256hw_calchash_codebin(calchash, *loadaddrptr, binsize>>2, (u32)*loadaddrptr, footerdata[0]);
+
+				for(pos=0; pos<(0x20>>2); pos++)
+				{
+					if(calchash[pos] != footerdata[1+pos])ret = 0x43;
+				}
+
+				errortable[7] = ret;
+			}
+		}
+	}
+	#endif
+
+	f_close(&fil);
+
+	if(ret)//Clear the memory for the binary load-addr range when reading the actual binary fails, or when verifying the hash fails.
+	{
+		bufptr = *loadaddrptr;
+		for(pos=0; pos<(binsize>>2); pos++)bufptr[pos] = 0;
+	}
+
+	return ret;
 }
 
 int main_()
