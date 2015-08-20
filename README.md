@@ -9,4 +9,6 @@ Prior to jumping to the arm9bin, it will handle booting the arm11(this requires 
 * "ENABLE_RETURNFROMCRT0=1" When the binaries were not loaded successfully, or when the arm9bin returned, return from the crt0 to the LR from the time of loader entry, instead executing an infinite loop.
 * "UNPROTBOOT9_LIBPATH={path}" This should be used to specify the path for the unprotboot9_sdmmc library, aka the path for that repo.
 * "DISABLE_ARM11=1" Completely disable *all* code involved with loading/booting the arm11 binary.
+* "ARM9BIN_FILEPATH={sd filepath}" Override the default filepath for the arm9bin. For example: "ARM9BIN_FILEPATH=/ld9.bin". The filenames here are FAT 8.3.
+* "ARM11BIN_FILEPATH={sd filepath}" This is the arm11bin version of the above option.
 

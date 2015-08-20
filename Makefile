@@ -35,6 +35,14 @@ ifneq ($(strip $(DISABLE_ARM11)),)
 	DEFINES	:=	$(DEFINES) -DDISABLE_ARM11
 endif
 
+ifneq ($(strip $(ARM9BIN_FILEPATH)),)
+	DEFINES	:=	$(DEFINES) -DARM9BIN_FILEPATH=\"$(ARM9BIN_FILEPATH)\"
+endif
+
+ifneq ($(strip $(ARM11BIN_FILEPATH)),)
+	DEFINES	:=	$(DEFINES) -DARM11BIN_FILEPATH=\"$(ARM11BIN_FILEPATH)\"
+endif
+
 ARCH	:=	-marm -fpie
 
 CFLAGS	:=	-g -Wall -Os\

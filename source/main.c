@@ -8,6 +8,14 @@
 
 #include "ff.h"
 
+#ifndef ARM9BIN_FILEPATH
+#define ARM9BIN_FILEPATH "/load9.bin"
+#endif
+
+#ifndef ARM11BIN_FILEPATH
+#define ARM11BIN_FILEPATH "/load11.bin"
+#endif
+
 extern u32 _start, __end__;
 
 /*void sha256hw_calchash(u32 *outhash, u32 *buf, u32 buf_wordsize)
@@ -180,11 +188,11 @@ int main_()
 	errortable[2] = res;
 	if(res!=FR_OK)return res;
 
-	ret = load_binary("/load9.bin", &errortable[4], &loadaddr9);//Load the arm9 and arm11 binaries.
+	ret = load_binary(ARM9BIN_FILEPATH, &errortable[4], &loadaddr9);//Load the arm9 and arm11 binaries.
 	if(ret)return ret;
 
 	#ifndef DISABLE_ARM11
-	ret = load_binary("/load11.bin", &errortable[4+8], &loadaddr11);
+	ret = load_binary(ARM11BIN_FILEPATH, &errortable[4+8], &loadaddr11);
 	if(ret)return ret;
 	#endif
 
