@@ -31,6 +31,10 @@ ifneq ($(strip $(ENABLE_RETURNFROMCRT0)),)
 	DEFINES	:=	$(DEFINES) -DENABLE_RETURNFROMCRT0
 endif
 
+ifneq ($(strip $(DISABLE_ARM11)),)
+	DEFINES	:=	$(DEFINES) -DDISABLE_ARM11
+endif
+
 ARCH	:=	-marm -fpie
 
 CFLAGS	:=	-g -Wall -Os\

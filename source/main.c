@@ -160,8 +160,13 @@ int main_()
 	FRESULT res;
 	FATFS fs;
 
-	u32 *loadaddr9 = 0, *loadaddr11 = 0;
+	u32 *loadaddr9 = 0;
 	s32 (*arm9_entrypoint)();
+
+	#ifndef DISABLE_ARM11
+	u32 *loadaddr11 = 0;
+	vu32 *arm11boot_ptr = (u32*)0x1ffffff8;
+	#endif
 
 	ret = unprotboot9_sdmmc_initialize();
 	errortable[0] = (u32)ret;
@@ -171,19 +176,28 @@ int main_()
 	errortable[1] = (u32)ret;
 	if(ret)return ret;
 
-	res = f_mount(&fs, "", 1);
+	res = f_mount(&fs, "", 1);//Mount the FS.
 	errortable[2] = res;
 	if(res!=FR_OK)return res;
 
-	ret = load_binary("/load9.bin", &errortable[4], &loadaddr9);
+	ret = load_binary("/load9.bin", &errortable[4], &loadaddr9);//Load the arm9 and arm11 binaries.
 	if(ret)return ret;
 
+	#ifndef DISABLE_ARM11
 	ret = load_binary("/load11.bin", &errortable[4+8], &loadaddr11);
 	if(ret)return ret;
+	#endif
 
-	res = f_mount(NULL, "", 1);
+	res = f_mount(NULL, "", 1);//Unmount
 	errortable[3] = res;
 	if(res!=FR_OK)return res;
+
+	#ifndef DISABLE_ARM11
+	//Have the ARM11 jump to loadaddr11.
+	arm11boot_ptr[1] = (u32)loadaddr11;
+	arm11boot_ptr[0] = 0x544f4f42;//"BOOT"
+	while(arm11boot_ptr[0] == 0x544f4f42);//Wait for the arm11 to write to this field, which is done before/after calling the payload.
+	#endif
 
 	arm9_entrypoint = (void*)loadaddr9;
 	ret = arm9_entrypoint();
