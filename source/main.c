@@ -270,10 +270,15 @@ int main_()
 	if(res!=FR_OK)return res;
 
 	#ifndef DISABLE_ARM11
+	#ifndef ALTARM11BOOT
 	//Have the ARM11 jump to loadaddr11.
 	arm11boot_ptr[1] = (u32)loadaddr11;
 	arm11boot_ptr[0] = 0x544f4f42;//"BOOT"
 	while(arm11boot_ptr[0] == 0x544f4f42);//Wait for the arm11 to write to this field, which is done before/after calling the payload.
+	#else
+	while(arm11boot_ptr[0] != 0);
+	arm11boot_ptr[0] = (u32)loadaddr11;
+	#endif
 	#endif
 
 	arm9_entrypoint = (void*)loadaddr9;

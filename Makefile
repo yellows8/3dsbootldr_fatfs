@@ -35,6 +35,10 @@ ifneq ($(strip $(DISABLE_ARM11)),)
 	DEFINES	:=	$(DEFINES) -DDISABLE_ARM11
 endif
 
+ifneq ($(strip $(ALTARM11BOOT)),)
+	DEFINES	:=	$(DEFINES) -DALTARM11BOOT
+endif
+
 ifneq ($(strip $(ARM9BIN_FILEPATH)),)
 	DEFINES	:=	$(DEFINES) -DARM9BIN_FILEPATH=\"$(ARM9BIN_FILEPATH)\"
 endif
