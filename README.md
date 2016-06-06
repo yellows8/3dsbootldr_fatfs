@@ -4,7 +4,7 @@ This uses code based on code from here: https://github.com/yellows8/bootldr9_raw
 
 Each binary starts with an u32 for the load-address, the rest of the binary is loaded to this address. See main.c for the blacklisted memory ranges(MPU is disabled while this loader is running and when jumping to the arm9bin). The filesize must be at least 0x8-bytes, and the filesize must be 4-byte aligned. When DISABLE_BINVERIFY isn't used, the filesize must be at least 0x2c-bytes: the last 0x24-bytes are a footer. The first u32 in that footer is the footertype, this must match little-endian value 0x1f40924e for SHA256. The following data in the footer is a SHA256 hash over the rest of the file(this footer is loaded into memory seperate from the loadaddr).
 
-See also the build_hashedbin.sh script, for building hashed binaries for this. "build_hashedbin.sh <inputbin> <outputbin>"
+See also the build_hashedbin.sh script, for building hashed binaries for this. "build_hashedbin.sh {inputbin} {outputbin}"
 
 Prior to jumping to the arm9bin, it will handle booting the arm11(this requires code running on the arm11 which can handle this). The following arm11boot method is only used if the ALTARM11BOOT option isn't specified. The entrypoint is written to u32 0x1ffffff8+4, then magicnum 0x544f4f42("BOOT") is written to u32 0x1ffffff8+0. Lastly, this arm9code waits for the arm11 to change the value at 0x1ffffff8+0.
 
