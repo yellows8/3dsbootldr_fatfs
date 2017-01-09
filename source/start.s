@@ -23,10 +23,13 @@ push {r1}
 sub r3, pc, #44
 push {r3}
 
-mrc 15, 0, r2, cr1, cr0, 0 @ Disable MPU, and save the original state on stack.
+mrc 15, 0, r2, cr1, cr0, 0 @ Disable MPU+dcache, and save the original state on stack.
 and r1, r2, #1
+and r3, r2, #0x4
+orr r1, r1, r3
 push {r1}
 bic r2, r2, #1
+bic r2, r2, #0x4
 mcr 15, 0, r2, cr1, cr0, 0
 
 ldr r0, =__got_start
@@ -65,10 +68,10 @@ startlp:
 b startlp
 #endif
 
-pop {r1} @ Restore the MPU enabled state.
+pop {r1} @ Restore the MPU state.
 mrc 15, 0, r2, cr1, cr0, 0
-and r1, r1, #1
-bic r2, r2, #1
+and r1, r1, #0x5
+bic r2, r2, #0x5
 orr r2, r2, r1
 mcr 15, 0, r2, cr1, cr0, 0
 
