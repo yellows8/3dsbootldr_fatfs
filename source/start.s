@@ -32,6 +32,12 @@ bic r2, r2, #1
 bic r2, r2, #0x4
 mcr 15, 0, r2, cr1, cr0, 0
 
+@ Flush dcache+icache
+mov r0, #0
+mcr 15, 0, r0, cr7, cr5, 0
+mcr 15, 0, r0, cr7, cr6, 0
+mcr 15, 0, r0, cr7, cr10, 4 @ Drain write buffer
+
 ldr r0, =__got_start
 ldr r1, =__got_end
 add r0, r0, r3
