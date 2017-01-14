@@ -25,8 +25,8 @@ push {r3}
 
 mrc 15, 0, r2, cr1, cr0, 0 @ Disable MPU+dcache, and save the original state on stack.
 and r1, r2, #1
-and r3, r2, #0x4
-orr r1, r1, r3
+and r0, r2, #0x4
+orr r1, r1, r0
 push {r1}
 bic r2, r2, #1
 bic r2, r2, #0x4
